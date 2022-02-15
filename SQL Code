@@ -36,91 +36,6 @@ CREATE TABLE Products (
   is_active tinyint(1) NOT NULL,
   date_inactivated DATE);
   
-CREATE TABLE ProductCountryPricing (
-  product_pricing_id INT(10) PRIMARY KEY,
-  product_id INT(10) NOT NULL,
-  unit_price INT(10) NOT NULL,
-  date_added CURDATE() NOT NULL,
-  is_active tinyint(1) NOT NULL,
-  date_inactivated DATE,
-  currency_id INT(10) NOT NULL,
-  FOREIGN KEY (currency_id) REFERENCES CountryCurrencies(currency_id)
-  FOREIGN KEY (product_id) REFERENCES Products(product_id));
-  
-CREATE TABLE SalesOrderLines (
-  line_id INT(10) PRIMARY KEY,
-  quantity INT(10) NOT NULL,
-  product_pricing_id INT(10) NOT NULL,
-  sales_order_id INT(10) NOT NULL,
-  FOREIGN KEY (sales_order_id) REFERENCES SalesOrders(sales_order_id),
-  FOREIGN KEY (product_pricing_id) REFERENCES ProductCountryPricing(product_pricing_id));
-  
-CREATE TABLE CustomerLocations (
-  location_id INT(10) NOT NULL,
-  customer_id INT(10) NOT NULL,
-  country_id char(3) NOT NULL,
-  date_added CURDATE() NOT NULL,
-  is_active tinyint(1) NOT NULL,
-  date_inactivated DATE,
-  PRIMARY KEY (location_id),
-  FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
-  FOREIGN KEY (country_id) REFERENCES Countries(iso3166_country_num));
-  
-CREATE TABLE CustomerLocationAddresses (
-  customer_location_address_id int(10) NOT NULL,
-  location_id int(10) NOT NULL,
-  address_type_id int(10) NOT NULL,
-  attn_ref varchar(255),
-  street1 varchar(255) NOT NULL,
-  street2 varchar(255),
-  street3 varchar(255),
-  city varchar(255) NOT NULL,
-  state_region varchar(255) NOT NULL,
-  postal_code varchar(255),
-  PRIMARY KEY (customer_location_address_id),
-  FOREIGN KEY (location_id) REFERENCES CustomerLocations(location_id),
-  FOREIGN KEY (address_type_id) REFERENCES AddressTypes(address_type_id));
-  
-CREATE TABLE SalesOrders (
-  sales_order_id int(10) NOT NULL,
-  order_currency_id int(10) NOT NULL,
-  ordering_location_id int(10) NOT NULL,
-  customer_purchase_order_ref varchar(255) NOT NULL,
-  order_date DATE NOT NULL,
-  date_added DATE NOT NULL,
-  is_cancelled tinyint(1) NOT NULL,
-  date_cancelled DATE,
-  is_complete tinyint(1) NOT NULL,
-  date_complete DATE,
-  PRIMARY KEY (sales_order_id),
-  FOREIGN KEY (ordering_location_id) REFERENCES CustomerLocations(location_id)
-  FOREIGN KEY (order_currency_id) REFERENCES CountryCurrencies(currency_id));
-  
-CREATE TABLE SalesOrderAddresses (
-  sales_order_address_id int(10) NOT NULL,
-  customer_location_address_id int(10) NOT NULL,
-  sales_order_id int(10) NOT NULL,
-  address_type_id int(10) NOT NULL,
-  PRIMARY KEY (sals_order_address_id),
-  FOREIGN KEY (customer_location_address_id) REFERENCES CustomerLocationAddresses(customer_location_address_id),
-  FOREIGN KEY (sales_order_id) REFERENCES SalesOrders(sales_order_id),
-  FOREIGN KEY (address_type_id) REFERENCES AddressTypes(address_type_id));
-  
-CREATE TABLE Countries (
-  iso3166_country_num char(3) NOT NULL PRIMARY KEY,
-  iso3166_country_name varchar(100) NOT NULL,
-  iso3166_alpha2_code car(2) NOT NULL,
-  date_added DATE NOT NULL,
-  is_active tinyint(1) NOT NULL,
-  date_inactivated DATE);
-  
-UPDATE Countries SET is_active = 
-  CASE
-    WHEN date_inactivated IS NULL then 1
-    WHEN date_inactivated IS NOT NULL then 0
-    ELSE date_inactivated
-    END;
-    
 CREATE TABLE CountryCurrencies (
   currency_id int(10) NOT NULL PRIMARY KEY,
   country_id char(3) NOT NULL,
@@ -146,6 +61,92 @@ UPDATE CountryCurrencies SET is_active =
     WHEN date_inactivated IS NOT NULL then 1
     ELSE date_inactivated
     END;
+  
+CREATE TABLE ProductCountryPricing (
+  product_pricing_id INT(10) PRIMARY KEY,
+  product_id INT(10) NOT NULL,
+  unit_price INT(10) NOT NULL,
+  date_added CURDATE() NOT NULL,
+  is_active tinyint(1) NOT NULL,
+  date_inactivated DATE,
+  currency_id INT(10) NOT NULL,
+  FOREIGN KEY (currency_id) REFERENCES CountryCurrencies(currency_id)
+  FOREIGN KEY (product_id) REFERENCES Products(product_id));
+  
+CREATE TABLE Countries (
+  iso3166_country_num char(3) NOT NULL PRIMARY KEY,
+  iso3166_country_name varchar(100) NOT NULL,
+  iso3166_alpha2_code car(2) NOT NULL,
+  date_added DATE NOT NULL,
+  is_active tinyint(1) NOT NULL,
+  date_inactivated DATE);
+  
+UPDATE Countries SET is_active = 
+  CASE
+    WHEN date_inactivated IS NULL then 1
+    WHEN date_inactivated IS NOT NULL then 0
+    ELSE date_inactivated
+    END;
+  
+CREATE TABLE CustomerLocations (
+  location_id INT(10) NOT NULL,
+  customer_id INT(10) NOT NULL,
+  country_id char(3) NOT NULL,
+  date_added CURDATE() NOT NULL,
+  is_active tinyint(1) NOT NULL,
+  date_inactivated DATE,
+  PRIMARY KEY (location_id),
+  FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+  FOREIGN KEY (country_id) REFERENCES Countries(iso3166_country_num));
+  
+CREATE TABLE SalesOrders (
+  sales_order_id int(10) NOT NULL,
+  order_currency_id int(10) NOT NULL,
+  ordering_location_id int(10) NOT NULL,
+  customer_purchase_order_ref varchar(255) NOT NULL,
+  order_date DATE NOT NULL,
+  date_added DATE NOT NULL,
+  is_cancelled tinyint(1) NOT NULL,
+  date_cancelled DATE,
+  is_complete tinyint(1) NOT NULL,
+  date_complete DATE,
+  PRIMARY KEY (sales_order_id),
+  FOREIGN KEY (ordering_location_id) REFERENCES CustomerLocations(location_id)
+  FOREIGN KEY (order_currency_id) REFERENCES CountryCurrencies(currency_id));
+  
+CREATE TABLE SalesOrderLines (
+  line_id INT(10) PRIMARY KEY,
+  quantity INT(10) NOT NULL,
+  product_pricing_id INT(10) NOT NULL,
+  sales_order_id INT(10) NOT NULL,
+  FOREIGN KEY (sales_order_id) REFERENCES SalesOrders(sales_order_id),
+  FOREIGN KEY (product_pricing_id) REFERENCES ProductCountryPricing(product_pricing_id));
+  
+CREATE TABLE CustomerLocationAddresses (
+  customer_location_address_id int(10) NOT NULL,
+  location_id int(10) NOT NULL,
+  address_type_id int(10) NOT NULL,
+  attn_ref varchar(255),
+  street1 varchar(255) NOT NULL,
+  street2 varchar(255),
+  street3 varchar(255),
+  city varchar(255) NOT NULL,
+  state_region varchar(255) NOT NULL,
+  postal_code varchar(255),
+  PRIMARY KEY (customer_location_address_id),
+  FOREIGN KEY (location_id) REFERENCES CustomerLocations(location_id),
+  FOREIGN KEY (address_type_id) REFERENCES AddressTypes(address_type_id));
+  
+CREATE TABLE SalesOrderAddresses (
+  sales_order_address_id int(10) NOT NULL,
+  customer_location_address_id int(10) NOT NULL,
+  sales_order_id int(10) NOT NULL,
+  address_type_id int(10) NOT NULL,
+  PRIMARY KEY (sals_order_address_id),
+  FOREIGN KEY (customer_location_address_id) REFERENCES CustomerLocationAddresses(customer_location_address_id),
+  FOREIGN KEY (sales_order_id) REFERENCES SalesOrders(sales_order_id),
+  FOREIGN KEY (address_type_id) REFERENCES AddressTypes(address_type_id));
+
  
 #Create Datawarehouse & Schema
 CREATE TABLE YearDimension (
