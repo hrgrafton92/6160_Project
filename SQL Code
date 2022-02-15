@@ -1,0 +1,276 @@
+SQL Code used for project in Google Cloud Platform
+
+#Create Database & Schema
+CREATE DATABASE bsr;
+USE bsr;
+
+#Create Tables
+CREATE TABLE Customers (
+  customer_id int(10) PRIMARY KEY,
+  name varchar(255) NOT NULL,
+  date_added CURDATE() NOT NULL,
+  is_active tinyint(1) NOT NULL,
+  date_inactivated DATE);
+  
+CREATE TABLE AddressTypes (
+  address_type_id int(10) PRIMARY KEY,
+  name varchar(255) NOT NULL);
+  
+UPDATE AddressTypes
+  SET name = "Home"
+  WHERE address_type_id = 1;
+  
+UPDATE AddressTypes
+  SET name = "Physical"
+  WHERE address_type_id = 2;
+  
+UPDATE AddressTypes
+  SET name = "Mailing"
+  WHERE address_type_id = 3;
+  
+CREATE TABLE Products (
+  product_id INT(10) PRIMARY KEY,
+  name VARCHAR (255) NOT NULL,
+  description VARCHAR (255),
+  date_added CURDATE() NOT NULL,
+  is_active tinyint(1) NOT NULL,
+  date_inactivated DATE);
+  
+CREATE TABLE ProductCountryPricing (
+  product_pricing_id INT(10) PRIMARY KEY,
+  product_id INT(10) NOT NULL,
+  unit_price INT(10) NOT NULL,
+  date_added CURDATE() NOT NULL,
+  is_active tinyint(1) NOT NULL,
+  date_inactivated DATE,
+  currency_id INT(10) NOT NULL,
+  FOREIGN KEY (currency_id) REFERENCES CountryCurrencies(currency_id)
+  FOREIGN KEY (product_id) REFERENCES Products(product_id));
+  
+CREATE TABLE SalesOrderLines (
+  line_id INT(10) PRIMARY KEY,
+  quantity INT(10) NOT NULL,
+  product_pricing_id INT(10) NOT NULL,
+  sales_order_id INT(10) NOT NULL,
+  FOREIGN KEY (sales_order_id) REFERENCES SalesOrders(sales_order_id),
+  FOREIGN KEY (product_pricing_id) REFERENCES ProductCountryPricing(product_pricing_id));
+  
+CREATE TABLE CustomerLocations (
+  location_id INT(10) NOT NULL,
+  customer_id INT(10) NOT NULL,
+  country_id char(3) NOT NULL,
+  date_added CURDATE() NOT NULL,
+  is_active tinyint(1) NOT NULL,
+  date_inactivated DATE,
+  PRIMARY KEY (location_id),
+  FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+  FOREIGN KEY (country_id) REFERENCES Countries(iso3166_country_num));
+  
+CREATE TABLE CustomerLocationAddresses (
+  customer_location_address_id int(10) NOT NULL,
+  location_id int(10) NOT NULL,
+  address_type_id int(10) NOT NULL,
+  attn_ref varchar(255),
+  street1 varchar(255) NOT NULL,
+  street2 varchar(255),
+  street3 varchar(255),
+  city varchar(255) NOT NULL,
+  state_region varchar(255) NOT NULL,
+  postal_code varchar(255),
+  PRIMARY KEY (customer_location_address_id),
+  FOREIGN KEY (location_id) REFERENCES CustomerLocations(location_id),
+  FOREIGN KEY (address_type_id) REFERENCES AddressTypes(address_type_id));
+  
+CREATE TABLE SalesOrders (
+  sales_order_id int(10) NOT NULL,
+  order_currency_id int(10) NOT NULL,
+  ordering_location_id int(10) NOT NULL,
+  customer_purchase_order_ref varchar(255) NOT NULL,
+  order_date DATE NOT NULL,
+  date_added DATE NOT NULL,
+  is_cancelled tinyint(1) NOT NULL,
+  date_cancelled DATE,
+  is_complete tinyint(1) NOT NULL,
+  date_complete DATE,
+  PRIMARY KEY (sales_order_id),
+  FOREIGN KEY (ordering_location_id) REFERENCES CustomerLocations(location_id)
+  FOREIGN KEY (order_currency_id) REFERENCES CountryCurrencies(currency_id));
+  
+CREATE TABLE SalesOrderAddresses (
+  sales_order_address_id int(10) NOT NULL,
+  customer_location_address_id int(10) NOT NULL,
+  sales_order_id int(10) NOT NULL,
+  address_type_id int(10) NOT NULL,
+  PRIMARY KEY (sals_order_address_id),
+  FOREIGN KEY (customer_location_address_id) REFERENCES CustomerLocationAddresses(customer_location_address_id),
+  FOREIGN KEY (sales_order_id) REFERENCES SalesOrders(sales_order_id),
+  FOREIGN KEY (address_type_id) REFERENCES AddressTypes(address_type_id));
+  
+CREATE TABLE Countries (
+  iso3166_country_num char(3) NOT NULL PRIMARY KEY,
+  iso3166_country_name varchar(100) NOT NULL,
+  iso3166_alpha2_code car(2) NOT NULL,
+  date_added DATE NOT NULL,
+  is_active tinyint(1) NOT NULL,
+  date_inactivated DATE);
+  
+UPDATE Countries SET is_active = 
+  CASE
+    WHEN date_inactivated IS NULL then 1
+    WHEN date_inactivated IS NOT NULL then 0
+    ELSE date_inactivated
+    END;
+    
+CREATE TABLE CountryCurrencies (
+  currency_id int(10) NOT NULL PRIMARY KEY,
+  country_id char(3) NOT NULL,
+  name varchar(255) NOT NULL,
+  abbreviation char(3) NOT NULL,
+  is4217_number char(3) NOT NULL,
+  decimal_parts int(10) NOT NULL,
+  date_added CURDATE() NOT NULL,
+  is_active tinyint(1) NOT NULL,
+  date_inactivated DATE,
+  FOREIGN KEY (country_id) REFERENCES Countries(iso3166_country_num));
+  
+UPDATE CountryCurrencies SET is_active = 
+  CASE
+    WHEN date_inactivated = 0000-00-00 THEN 0
+    WHEN date_inactivated <> 0000-00-00 THEN 1
+    ELSE date_inactivated
+    END;
+    
+UPDATE CountryCurrencies SET is_active = 
+  CASE
+   WHEN date_inactivated IS NULL then 0
+    WHEN date_inactivated IS NOT NULL then 1
+    ELSE date_inactivated
+    END;
+ 
+#Create Datawarehouse & Schema
+CREATE TABLE YearDimension (
+  year_key int(10) PRIMARY KEY NOT NULL,
+  year_value int(10) NOT NULL);
+  
+CREATE TABLE WeekOfYearDimension (
+  week_of_year_key int(10) PRIMARY KEY,
+  week_of_year_value int(10) NOT NULL);
+  
+CREATE TABLE MonthOfYearDimension (
+  month_of_year_key int(10) PRIMARY KEY,
+  month_key_name varchar(255) NOT NULL);
+  
+CREATE TABLE DayOfMonthDimension (
+  day_of_month_key int(10) PRIMARY KEY,
+  day_of_month_value int(10) NOT NULL);
+  
+CREATE TABLE DayOfWeekDimension (
+  day_of_week_key int(10) PRIMARY KEY,
+  day_of_week_value varchar(255) NOT NULL);
+  
+CREATE TABLE ProductDimension (
+  product_key int(10) PRIMARY KEY,
+  product_name varchar(255) NOT NULL);
+  
+INSERT INTO BSR_DW.ProductDimension(product_key, product_name)
+  SELECT product_id, name
+  FROM BSR_ODS.Products;
+  
+CREATE TABLE CountryDimension (
+  country_key int(10) PRIMARY KEY,
+  country_name varchar(255) NOT NULL);
+  
+INSERT INTO BSR_DW.CountryDimension(country_key, country_name)
+  SELECT iso3166_country_num, iso3166_country_name
+  FROM BSR_ODS.Countries;
+  
+CREATE TABLE CurrencyConversion (
+  valuation_date date NOT NULL,
+  source_currency_abbreviation char(3) NOT NULL,
+  target_currency_abbreviation char(3) NOT NULL,
+  conversion_rate double NOT NULL,
+  CONSTRAINT UC_CurrencyConversion UNIQUE (valuation_date, source_currency_abbreviation, target_currency_abbreviation));
+  
+CREATE TABLE TimeDimension (
+  time_key int(10) PRIMARY KEY,
+  date_value date NOT NULL,
+  date_text varchar(255) NOT NULL,
+  year_key int(10) NOT NULL,
+  week_of_year_key int(10) NOT NULL,
+  month_of_year_key int(10) NOT NULL,
+  day_of_month_key int(10) NOT NULL,
+  day_of_week_key int(10) NOT NULL);
+  
+ALTER TABLE TimeDimension
+  ADD FOREIGN KEY (year_key) REFERENCES YearDimension(year_key)
+  ADD FOREIGN KEY (week_of_year_key) REFERENCES WeekOfYearDimension(week_of_year_key),
+  ADD FOREIGN KEY (month_of_year_key) REFERENCES MonthOfYearDimension(month_of_year_key),
+  ADD FOREIGN KEY (day_of_month_key) REFERENCES DayOfWeekDimension(day_of_month_key),
+  ADD FOREIGN KEY (day_of_week_key) REFERENCES DayOfWeekDimension(day_of_week_key);
+  
+INSERT INTO BSR_DW.TimeDimension(date_value, date_text)
+  SELECT DISTINCT order_date, order_date
+  FROM BSR_ODS.SalesOrders;
+  
+UPDATE TimeDimension SET 
+  day_of_month_key = Dayofmonth(date_value)
+  month_of_year_key = Month(date_value),
+  week_of_year_key = Week(date_value),
+  day_of_week_key = dayofweek(date_value);
+  
+CREATE TEMPORARY TABLE TDCalc (
+  date_value DATE,
+  date_year varchar(255),
+  year_key varchar(255),
+  time_key varchar(255));
+  
+INSERT INTO BSR_DW.TDCalc(date_value, time_key)
+  SELECT DISTINCT date_value, time_key
+  FROM TimeDimension;
+  
+UPDATE TimeDimension as T
+  INNER JOIN (SELECT TD.time_key, YD.year_key
+              FROM TDCalc TD
+              LEFT JOIN YearDimension YD
+              ON TD.date_year = YD.year_value ) A
+  ON T.time_key = A.time_key
+  SET T.year_key = A.year_key;
+  
+CREATE TABLE BSRFactTable (
+  time_key int(10) NOT NULL,
+  country_key int(10) NOT NULL,
+  product_key int(10) NOT NULL,
+  qty_sold int(10) NOT NULL,
+  sales_value double NOT NULL,
+  CONSTRAINT UC_BSRFactTable UNIQUE (time_key,country_key,product_key));
+  
+ALTER TABLE BSRFactTable
+  ADD FOREIGN KEY (time_key) REFERENCES TimeDimension(time_key),
+  ADD FOREIGN KEY (country_key) REFERENCES CountryDimension(country_key),
+  ADD FOREIGN KEY (product_key) REFERENCES ProductDimension(product_key);
+  
+INSERT INTO BSR_DW.BSRFactTable
+  SELECT TD.time_key, CL.country_id, PCP.product_id, SOL.quantity,
+  CASE
+    WHEN CC.abbreviation = 'USD' THEN ROUND(SOL.quantity * PCP.unit_price,2)
+    ELSE ROUND(Con.conversion_rate * SOL.quantity * PCP.unit_price,2)
+    END AS sales_value
+  FROM BSR_ODS.SalesOrders SO
+  INNER JOIN BSR_DW.TimeDimension TD ON
+  SO.order_date = TD.date_value
+  INNER JOIN BSR_ODS.CustomerLocations CL ON
+  SO.ordering_location_id = CL.location_id
+  INNER JOIN BSR_ODS.SalesOrderLines SOL ON
+  SO.sales_order_id = SOL.line_id
+  INNER JOIN BSR_ODS.ProductCountryPricing PCP ON
+  SOL.product_pricing_id = PCP.product_pricing_id
+  INNER JOIN BSR_ODS.CountryCurrencies CC ON
+  SO.order_currency_id = CC.currency_id
+  LEFT JOIN CurrencyConversion CON ON
+  CON.valuation_date = 
+  CASE
+    WHEN TD.day_of_week_key = 1 THEN DATE_ADD(SO.order_date, INTERVAL -2 DAY)
+    WHEN TD.day_of_week_key = 7 THEN DATE_ADD(SO.order_date, INTERVAL -1 DAY)
+    ELSE SO.order_date
+  END
+  AND CON.source_currency_abbreviation = CC.abbreviation;
