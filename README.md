@@ -1,5 +1,5 @@
 # 6160_Project
-Final Project for DSBA 6160 class. The project was done through Google Cloud Platform. 
+Final Project for DSBA 6160 class. The project was done through Google Cloud Platform. CSV files were uploaded to GCP and imported to corresponding tables.
 
 Instructions:
 
