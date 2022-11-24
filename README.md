@@ -1,9 +1,11 @@
 # Database and Datawarehouse Creation for BSR
 Final Project for DSBA 6160 class taught by Professor Rob Abbott. The project was done through Google Cloud Platform. CSV files were uploaded to GCP and imported to corresponding tables.
 
-
 Operational Data Store
-![OPERATIONAL DATA STORE](https://github.com/hrgrafton92/DB_and_DW_Design/blob/main/bsr_dw%20er%20diagram.png)
+![OPERATIONAL DATA STORE](https://github.com/hrgrafton92/DB_and_DW_Design/blob/main/bsr_ods%20er%20diagram.png)
+
+Operational Datawarehouse
+![OPERATIONAL DATAWAREHOUSE](https://github.com/hrgrafton92/DB_and_DW_Design/blob/main/bsr_dw%20er%20diagram.png)
 
 Instructions:
 
